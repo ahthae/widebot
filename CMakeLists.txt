@@ -18,6 +18,9 @@ target_include_directories(WideBot PRIVATE include)
 add_subdirectory(lib/sleepy-discord)
 target_link_libraries(WideBot sleepy-discord)
 
+add_subdirectory(lib/Wideinator)
+target_link_libraries(WideBot wideinator)
+
 pkg_check_modules(CURLPP REQUIRED curlpp)
 target_link_libraries(WideBot ${CURLPP_LDFLAGS})
 

@@ -2,11 +2,9 @@
 
 #include <sleepy_discord/sleepy_discord.h>
 #include <curlpp/Easy.hpp>
-#include <Magick++.h>
 
-#include <list>
+#include <wideinator.hpp>
 #include <string>
-#include <vector>
 
 namespace widebot{
   
@@ -35,10 +33,13 @@ namespace widebot{
     std::string prefix_ = "!";
 
     // Seperates command from arguments, returns 1 any arguments were found
-    int parseCommand(const std::string& msg, std::string* cmd, std::string* args);
+    int parseCommand(const std::string& msg, std::string* cmd, std::vector<std::string>* args);
     int parseNumSplits(const std::string& args);
-    std::vector<std::list<Magick::Image>> splitImage(const std::list<Magick::Image> &image, const int &num_splits);
-    int createEmoji(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID, const std::string &name, const std::list<Magick::Image> &image, std::vector<SleepyDiscord::Snowflake<SleepyDiscord::Role>> roles);
+    int createEmoji(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID,
+                    const std::string &name,
+                    const std::string &mime_type,
+                    const wideinator::Image &image,
+                    std::vector<SleepyDiscord::Snowflake<SleepyDiscord::Role>> roles);
   };
 
 } //namespace widebot

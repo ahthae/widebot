@@ -3,69 +3,73 @@
 #include <curlpp/Options.hpp>
 #include <curlpp/Exception.hpp>
 
-#include <Magick++.h>
-
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <list>
+#include <sstream>
 #include <vector>
 
 using namespace SleepyDiscord;
 using namespace cURLpp;
+using namespace wideinator;
 
 namespace widebot {
 
   void WideBot::onMessage(Message message) {
     if (message.startsWith(prefix_)) { 
       std::cout << "Recieved command: " << message.content << std::endl;
-      std::string cmd, args;
+      std::string cmd;
+      std::vector<std::string> args;
       parseCommand(message.content, &cmd, &args);
+      std::cout << "Command: " << cmd << std::endl;
+      std::cout << "Args: ";
+      for (const auto& arg : args) {
+        std::cout << arg << ' ';
+      }
+      std::cout << std::endl;
 
       if(cmd == commands.HELP) {
-        sendMessage(message.channelID, "Caption and image attachment with `" + prefix_ + "wide [num_splits]` to split and widen and image for emojis!");
-      } else if (cmd == commands.EMOJI) {
-        std::string image_data_uri = "data:image/jpg;base64,";
-        Magick::Image image("test.jpg");
-        Magick::Blob blob;
-        image.write(&blob);
-        image_data_uri += blob.base64();
-        std::vector<Snowflake<Role>> roles;
-        roles.push_back(Snowflake<Role>("801225009636442133"));
-        createServerEmoji(message.serverID, "test", image_data_uri, roles);
+        sendMessage(message.channelID, "Caption and image attachment with `" + prefix_ + "wide [num_splits] {w}` to split and widen and image for emojis!");
       } else if (cmd == commands.PREFIX) {
         if (args.empty()) {
           prefix_ = "!";
           sendMessage(message.channelID, "Resetting prefix to `" + prefix_ + "`.");
         } else {
-          prefix_ = args;
-          sendMessage(message.channelID, "Setting the command prefix to `" + args + "`.");
+          prefix_ = args[0];
+          sendMessage(message.channelID, "Setting the command prefix to `" + prefix_ + "`.");
         }
       } else if (cmd == commands.WIDE) {
         if (message.attachments.empty()) {
           sendMessage(message.channelID, "Error: no attachment found");
           return;
         }
-
-        bool create_emojis = true;
-
-        int num_splits = parseNumSplits(args);
-        std::cout << "Using " << num_splits << " splits.\n";
-        if (num_splits < 1) {
-          num_splits = 2;
-          std::cout << "Defaulting to 2 splits\n";
+        if (args.size() < 1) {
+          sendMessage(message.channelID, "Error: missing arguments");
+          return;
         }
 
-        std::cout << "Recieved attachment: " << std::endl;
-        for (const auto& f : message.attachments) {
-          std::cout << '\t' << f.filename << " at " << f.url << std::endl;
+        bool create_emojis = true; //TODO
+        bool no_split = *--args.end() == "w" ? true : false;
 
-          std::list<Magick::Image> image;
+        int num_splits;
+        try {
+          num_splits = std::stoi(args[0].c_str());
+        }
+        catch (std::invalid_argument &e) {
+          sendMessage(message.channelID, "Error: invalid argument");
+          std::cerr << "Invalid argument: \n" << e.what();
+          return;
+        }
+        std::cout << "Using " << num_splits << " splits.\n";
+
+        std::cout << "Recieved attachment: " << std::endl;
+        for (const auto& a : message.attachments) {
+          std::cout << '\t' << a.filename << " at " << a.url << std::endl;
 
           std::stringstream out;
           try { 
 
-            curl_->setOpt(Options::Url(f.url));
+            curl_->setOpt(Options::Url(a.url));
             curl_->setOpt(Options::WriteStream(&out));
             curl_->perform();
           }
@@ -84,31 +88,35 @@ namespace widebot {
           out.read(data, size);
           Magick::Blob blob(data, size);
 
-          std::list<Magick::Image> raw_image;
-          Magick::readImages(&raw_image, blob);
-          Magick::coalesceImages(&image, raw_image.begin(), raw_image.end());
+          Image image(blob);
 
-          auto splits = splitImage(image, num_splits);
+          std::vector<Image> splits; 
+          // TODO: Make this an argument option; actually implement optionally splitting
+          if (no_split) { // TESTING
+            splits.emplace_back(stretchImage(image, num_splits));
+          } else { // END TESTING
+            splits = splitImage(stretchImage(image, num_splits), num_splits);
+          }
 
           std::cout << "Writing and uploading... \n";
-          for (int i = 0; i < num_splits; i++) {
+          for (std::size_t i = 0; i < splits.size(); i++) {
             std::string name, format;
-            for (size_t i = f.filename.length(); i > 0; i--) {
-              if (f.filename[i] == '.') {
-                name = f.filename.substr(0, i);
-                format = f.filename.substr(i, std::string::npos);
+            for (size_t i = a.filename.length(); i > 0; i--) {
+              if (a.filename[i] == '.') {
+                name = a.filename.substr(0, i);
+                format = a.filename.substr(i, std::string::npos);
                 break;
               }
             }
             std::string out_name = "wide" + name + std::to_string(i+1);
             std::string out_filename = out_name + format;
             std::cout << "Writing " << out_filename << std::endl;
-            Magick::writeImages(splits[i].begin(), splits[i].end(), out_filename);
+              splits[i].write(out_filename.c_str());
 
             if (create_emojis) {
               std::vector<Snowflake<Role>> roles; // role have yet to be implemented in sleepy_discord
 //            roles.push_back(Snowflake<Role>("801225009636442133"));
-              if (!createEmoji(message.serverID, out_name, splits[i], roles)) {
+              if (!createEmoji(message.serverID, out_name, a.content_type, splits[i], roles)) {
                 create_emojis = false;
               }
             }
@@ -135,65 +143,29 @@ namespace widebot {
     return  num_splits;
   }
 
-  std::vector<std::list<Magick::Image>> WideBot::splitImage(const std::list<Magick::Image> &image, const int &num_splits) {
-    std::vector<std::list<Magick::Image>> splits;
-
-    for(int i = 0; i < num_splits; i++) {
-      splits.emplace_back(std::list<Magick::Image>());
+  int WideBot::parseCommand(const std::string& msg, std::string* cmd, std::vector<std::string>* args) {
+    std::istringstream ss(msg.substr(prefix_.length()));
+    std::string word;
+    std::getline(ss, *cmd, ' ');
+    while (std::getline(ss, word, ' ')) {
+      args->emplace_back(word);
     }
-
-    std::cout << "Transforming image... ";
-    for(auto& img : image) {
-      Magick::Geometry sizeOrig = img.size();
-      sizeOrig.aspect(true);
-      size_t offset = 0;
-      for(int i = 0; i < num_splits; i++) {
-        Magick::Geometry size;
-        size = sizeOrig;
-        size.width(sizeOrig.width() / num_splits);
-        size.xOff(offset);
-        offset += size.width();
-
-        Magick::Image split = img;
-        split.crop(size);
-        split.repage();
-        split.resize(sizeOrig);
-        splits[i].emplace_back(split);
-      }
-    }
-    std::cout << "done.\n";
-
-    return splits;
-  }
-
-  int WideBot::parseCommand(const std::string& msg, std::string* cmd, std::string* args) {
-    for(size_t i = prefix_.length(); i < msg.length(); i++) {
-      if(msg[i] == ' ') { 
-        cmd->assign(msg.substr(prefix_.length(), i - prefix_.length()));
-        args->assign(msg.substr(i + 1));
-        return 1;
-      }
-    }
-    cmd->assign(msg.substr(prefix_.length()));
     return 0;
   }
 
-  int WideBot::createEmoji(Snowflake<Server> serverID, const std::string &name, const std::list<Magick::Image> &image, std::vector<Snowflake<Role>> roles) {
-    std::string image_data_uri = "data:image/";
-    std::string format = image.front().magick();
-    if (format == "JPEG") {
-      image_data_uri += "jpeg";
-    } else if (format  == "PNG") {
-      image_data_uri += "png";
-    } else if (format == "GIF") {
-      image_data_uri += "gif";
-    } else {
-      return false;
-    }
-    image_data_uri += ";base64,";
-    for (auto img : image) {
+  int WideBot::createEmoji(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID, const std::string &name, const std::string &mime_type, const Image &image, std::vector<SleepyDiscord::Snowflake<SleepyDiscord::Role>> roles) {
+    std::string image_data_uri = "data:" + mime_type + ";base64,";
+
+    std::cout << "Emoji MIME type: " << image_data_uri << std::endl;
+
+    for (auto frame : image.getFrames()) {
       Magick::Blob blob;
-      img.write(&blob);
+      try {
+        frame.write(&blob);
+      }
+      catch(Magick::WarningCoder &w) {
+        std::cerr << "Magick codec warning: " << w.what() << std::endl;
+      }
       image_data_uri += blob.base64();
     }
     try{
@@ -201,6 +173,10 @@ namespace widebot {
     }
     catch(std::exception& e) {
       std::cerr << e.what() << std::endl;
+      return false;
+    }
+    catch (SleepyDiscord::ErrorCode& e) {
+      std::cerr << e << std::endl;
       return false;
     }
     return true;
