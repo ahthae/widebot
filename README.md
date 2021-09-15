@@ -25,9 +25,9 @@ cmake --build .
 ```
 
 ### Build notes:
-Make sure the ImageMagick library and headers are the same version, otherwise it causes linking issues.
-See https://yourwaifu.dev/sleepy-discord/setup-standard-cli.html#common-errors for errors with Sleepy Discord.
-Ubuntu builds seems to be affected by https://askubuntu.com/questions/1233186/ubuntu-20-04-how-to-set-lower-ssl-security-level.
+- Make sure the ImageMagick library and headers are the same version, otherwise it causes linking issues.
+- See https://yourwaifu.dev/sleepy-discord/setup-standard-cli.html#common-errors for errors with Sleepy Discord.
+- Ubuntu builds seems to be affected by https://askubuntu.com/questions/1233186/ubuntu-20-04-how-to-set-lower-ssl-security-level.
 
 ## Usage
 
