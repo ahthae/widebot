@@ -12,11 +12,14 @@ Requirements:
 
 2. In the OAuth2 section, enable the Bot scope and "Send Messages" and "Attach Files" bot permissions, then go to the generated URL and invite the bot to your server.
 
-3. Place the bot token in token.txt
+3. 
 
 4. Build and run the bot
 ```
 git clone --recursive https://github.com/tarrem/WideBot.git
+```
+Place the bot token in token.txt
+```
 mkdir build && cd build
 cmake ..
 cmake --build .
