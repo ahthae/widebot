@@ -1,9 +1,9 @@
-#include "wideinator.hpp"
+#include "widepeepolib.hpp"
 
 #include <Magick++.h>
 #include <vector>
 
-namespace wideinator {
+namespace widepeepolib{
 
   Image stretchImage(const Image &image, const int &multiplier) {
     Image stretched_image = image;
@@ -33,4 +33,4 @@ namespace wideinator {
 
     return splits;
   }
-} //namespace wideinator
+} //namespace wwidepeepolib 

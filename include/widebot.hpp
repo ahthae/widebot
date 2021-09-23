@@ -3,7 +3,7 @@
 #include <sleepy_discord/sleepy_discord.h>
 #include <curlpp/Easy.hpp>
 
-#include <wideinator.hpp>
+#include <widepeepolib.hpp>
 #include <string>
 
 namespace widebot{
@@ -31,6 +31,7 @@ namespace widebot{
 
     cURLpp::Easy* curl_ = nullptr;
     std::string prefix_ = "!";
+    std::string cache_dir_ = "cache";
 
     // Seperates command from arguments, returns 1 any arguments were found
     int parseCommand(const std::string& msg, std::string* cmd, std::vector<std::string>* args);
@@ -38,7 +39,7 @@ namespace widebot{
     int createEmoji(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID,
                     const std::string &name,
                     const std::string &mime_type,
-                    const wideinator::Image &image,
+                    const widepeepolib::Image &image,
                     std::vector<SleepyDiscord::Snowflake<SleepyDiscord::Role>> roles);
   };
 

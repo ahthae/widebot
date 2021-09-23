@@ -4,7 +4,7 @@
 #include <list>
 #include <iostream>
 
-namespace wideinator {
+namespace widepeepolib {
 
   // Mostly a wrapper to simplify the representation of gifs as a single object
   class Image {
@@ -56,4 +56,4 @@ namespace wideinator {
     std::list<Magick::Image> frames;
   };
 
-} //namespace wideinator 
+} //namespace widepeepolib 

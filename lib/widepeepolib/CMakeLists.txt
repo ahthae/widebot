@@ -6,23 +6,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-project(WideBot VERSION 1.0)
+project(widepeepolib VERSION 1.0)
 
-add_executable( WideBot
-  src/main.cpp
-  src/widebot.cpp
+add_library(widepeepolib
+  src/widepeepolib.cpp
 )
 
-target_include_directories(WideBot PRIVATE include)
-
-add_subdirectory(lib/sleepy-discord)
-target_link_libraries(WideBot sleepy-discord)
-
-add_subdirectory(lib/widepeepolib)
-target_link_libraries(WideBot widepeepolib)
-
-pkg_check_modules(CURLPP REQUIRED curlpp)
-target_link_libraries(WideBot ${CURLPP_LDFLAGS})
+target_include_directories(widepeepolib PUBLIC include)
 
 find_package(ImageMagick REQUIRED COMPONENTS Magick++ MagickCore MagickWand)
 if (ImageMagick_FOUND)
@@ -31,7 +21,5 @@ if (ImageMagick_FOUND)
 endif (ImageMagick_FOUND)
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
 add_definitions( -DMAGICKCORE_HDRI_ENABLE=1 )
-target_link_libraries(WideBot ${ImageMagick_LIBRARIES})
-target_include_directories(WideBot PRIVATE ${ImageMagick_INCLUDE_DIRS})
-
-configure_file(token.txt token.txt COPYONLY)
+target_link_libraries(widepeepolib ${ImageMagick_LIBRARIES})
+target_include_directories(widepeepolib PRIVATE ${ImageMagick_INCLUDE_DIRS})

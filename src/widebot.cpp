@@ -3,6 +3,7 @@
 #include <curlpp/Options.hpp>
 #include <curlpp/Exception.hpp>
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -11,7 +12,7 @@
 
 using namespace SleepyDiscord;
 using namespace cURLpp;
-using namespace wideinator;
+using namespace widepeepolib;
 
 namespace widebot {
 
@@ -48,7 +49,7 @@ namespace widebot {
           return;
         }
 
-        bool create_emojis = true; //TODO
+        bool create_emojis = false; //TODO
         bool no_split = *--args.end() == "w" ? true : false;
 
         int num_splits;
@@ -110,8 +111,9 @@ namespace widebot {
             }
             std::string out_name = "wide" + name + std::to_string(i+1);
             std::string out_filename = out_name + format;
-            std::cout << "Writing " << out_filename << std::endl;
-              splits[i].write(out_filename.c_str());
+            std::filesystem::path p = std::filesystem::current_path() / cache_dir_ / out_filename;
+            std::cout << "Writing " << p << std::endl;
+              splits[i].write(p.c_str());
 
             if (create_emojis) {
               std::vector<Snowflake<Role>> roles; // role have yet to be implemented in sleepy_discord
@@ -121,7 +123,7 @@ namespace widebot {
               }
             }
 
-            uploadFile(message.channelID, out_filename, "");
+            uploadFile(message.channelID, p, "");
           }
         }
       }
