@@ -17,8 +17,10 @@ namespace widebot{
 
   class WideBot : public SleepyDiscord::DiscordClient {
   public:
-    WideBot(const std::string token, SleepyDiscord::Mode mode, cURLpp::Easy* curl)
-    : SleepyDiscord::DiscordClient(token, mode), curl_(curl) {}
+    WideBot(const std::string token, SleepyDiscord::Mode mode, cURLpp::Easy* curl, std::string cache_dir = "cache")
+    : SleepyDiscord::DiscordClient(token, mode), curl_(curl), cache_dir_(cache_dir) {}
+
+    void init();
     
     void onMessage(SleepyDiscord::Message message) override;
 
@@ -36,11 +38,12 @@ namespace widebot{
     // Seperates command from arguments, returns 1 any arguments were found
     int parseCommand(const std::string& msg, std::string* cmd, std::vector<std::string>* args);
     int parseNumSplits(const std::string& args);
-    int createEmoji(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID,
+    SleepyDiscord::ObjectResponse<SleepyDiscord::Emoji> createEmoji(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID,
                     const std::string &name,
                     const std::string &mime_type,
-                    const widepeepolib::Image &image,
-                    std::vector<SleepyDiscord::Snowflake<SleepyDiscord::Role>> roles);
+                    widepeepolib::Image &image,
+                    std::vector<SleepyDiscord::Snowflake<SleepyDiscord::Role>> roles,
+                    RequestSettings<SleepyDiscord::ObjectResponse<SleepyDiscord::Emoji>> settings);
   };
 
 } //namespace widebot

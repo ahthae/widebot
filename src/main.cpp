@@ -8,6 +8,7 @@
 #include <Magick++.h>
 
 int main(int argv, char** argc) {
+  // Read token
   std::stringstream buf;
   std::ifstream f("token.txt");
   if (!f) {
@@ -27,6 +28,7 @@ int main(int argv, char** argc) {
   widebot::WideBot wideBot(token,
                   SleepyDiscord::USER_CONTROLED_THREADS,
                   &curl);
+  wideBot.init();
   wideBot.run();
 
   return 0;

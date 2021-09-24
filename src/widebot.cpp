@@ -1,3 +1,5 @@
+#include "sleepy_discord/common_return_types.h"
+#include <curl/curl.h>
 #include <widebot.hpp>
 
 #include <curlpp/Options.hpp>
@@ -15,6 +17,12 @@ using namespace cURLpp;
 using namespace widepeepolib;
 
 namespace widebot {
+
+  void WideBot::init() { 
+    std::filesystem::path cache = std::filesystem::current_path() / cache_dir_;
+    std::filesystem::create_directory(cache);
+    std::cout << "Created cache directory: " << cache << std::endl;
+  }
 
   void WideBot::onMessage(Message message) {
     if (message.startsWith(prefix_)) { 
@@ -49,7 +57,7 @@ namespace widebot {
           return;
         }
 
-        bool create_emojis = false; //TODO
+        bool create_emojis = true; //TODO
         bool no_split = *--args.end() == "w" ? true : false;
 
         int num_splits;
@@ -101,6 +109,7 @@ namespace widebot {
 
           std::cout << "Writing and uploading... \n";
           for (std::size_t i = 0; i < splits.size(); i++) {
+            // Construct the filename
             std::string name, format;
             for (size_t i = a.filename.length(); i > 0; i--) {
               if (a.filename[i] == '.') {
@@ -111,38 +120,30 @@ namespace widebot {
             }
             std::string out_name = "wide" + name + std::to_string(i+1);
             std::string out_filename = out_name + format;
-            std::filesystem::path p = std::filesystem::current_path() / cache_dir_ / out_filename;
-            std::cout << "Writing " << p << std::endl;
-              splits[i].write(p.c_str());
 
             if (create_emojis) {
-              std::vector<Snowflake<Role>> roles; // role have yet to be implemented in sleepy_discord
-//            roles.push_back(Snowflake<Role>("801225009636442133"));
-              if (!createEmoji(message.serverID, out_name, a.content_type, splits[i], roles)) {
+              std::vector<Snowflake<Role>> roles; // role have yet to be implemented in sleepy_discorda
+              try {
+                createEmoji(message.serverID, out_name, a.content_type, splits[i], roles, RequestMode(~ThrowError));
+              }
+              catch (Magick::ErrorCoder &e) {
+                std::cout << "ImageMagick error: " << e.what();
+                create_emojis = false;
+              }
+              catch (std::exception &e) {
+                std::cout << "Error uploading emoji: " << e.what();
                 create_emojis = false;
               }
             }
 
+            std::filesystem::path p = std::filesystem::current_path() / cache_dir_ / out_filename;
+            std::cout << "Writing " << p << std::endl;
+            splits[i].write(p.c_str());
             uploadFile(message.channelID, p, "");
           }
         }
       }
     }
-  }
-
-  int WideBot::parseNumSplits(const std::string& args) {
-    int num_splits = 0;
-    // assumes the number of splits is the first integer argument
-    for(size_t i = 0; i < args.length(); i++) {
-      try {
-        num_splits = std::stoi(args.substr(i));
-        return num_splits;
-      }
-      catch (std::invalid_argument &e) {
-        std::cerr << "Unable to parse splits argument\n";
-      }
-    }
-    return  num_splits;
   }
 
   int WideBot::parseCommand(const std::string& msg, std::string* cmd, std::vector<std::string>* args) {
@@ -155,33 +156,14 @@ namespace widebot {
     return 0;
   }
 
-  int WideBot::createEmoji(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID, const std::string &name, const std::string &mime_type, const Image &image, std::vector<SleepyDiscord::Snowflake<SleepyDiscord::Role>> roles) {
+  ObjectResponse<Emoji> WideBot::createEmoji(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID, const std::string &name, const std::string &mime_type, Image &image, std::vector<SleepyDiscord::Snowflake<SleepyDiscord::Role>> roles, RequestSettings<ObjectResponse<Emoji>> settings) {
     std::string image_data_uri = "data:" + mime_type + ";base64,";
 
-    std::cout << "Emoji MIME type: " << image_data_uri << std::endl;
+    Magick::Blob blob;
+    image.write(blob);
+    image_data_uri += blob.base64();
 
-    for (auto frame : image.getFrames()) {
-      Magick::Blob blob;
-      try {
-        frame.write(&blob);
-      }
-      catch(Magick::WarningCoder &w) {
-        std::cerr << "Magick codec warning: " << w.what() << std::endl;
-      }
-      image_data_uri += blob.base64();
-    }
-    try{
-      createServerEmoji(serverID, name, image_data_uri, roles);
-    }
-    catch(std::exception& e) {
-      std::cerr << e.what() << std::endl;
-      return false;
-    }
-    catch (SleepyDiscord::ErrorCode& e) {
-      std::cerr << e << std::endl;
-      return false;
-    }
-    return true;
+    return createServerEmoji(serverID, name, image_data_uri, roles, settings);
   }
 
 } //namespace widebot

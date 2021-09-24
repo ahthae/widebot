@@ -16,12 +16,28 @@ Requirements:
 ```
 git clone --recursive https://github.com/tarrem/WideBot.git
 ```
-Put the bot token into token.txt
+Put the bot token into `token.txt`
 ```
+cd WideBot
 mkdir build && cd build
 cmake ..
 cmake --build .
 ./WideBot
+```
+
+### Using Docker
+
+The Dockerfile and docker-compose.yml files can be used to build a docker image of the bot for easy deployment.
+
+Using docker-compose:
+```
+git clone --recursive https://github.com/tarrem/WideBot.git
+```
+Put the bot token into `token.txt`
+```
+cd WideBot
+cd docker
+docker-compse up --build
 ```
 
 ### Build notes:
@@ -34,12 +50,15 @@ cmake --build .
 In Discord, attach and caption and image or gif with `!wide [num_splits]` and the bot will upload the modified images.
 
 ## To-Do
-- [ ] Re-optimize gifs transformation
-- [ ] Option to automatically upload guild emoji
-- [ ] Option to stretch without splitting
-  - [x] ImageProcessor class (::split, ::stretch)
+- [x] Split arguments into array
+  - [ ] Command option parsing
+    - [ ] Option to automatically upload guild emoji
+    - [ ] Option to stretch without splitting
+      - [x] ImageProcessor class (::split, ::stretch)
 - [ ] Delete cached images
 - [x] Custom command prefix
 - [ ] Handle quotations and code blocks in prefix command
 - [ ] Role-based num_splits limit
-- [x] Split arguments into array
+- [ ] Emoji upload error messages
+- [ ] Get rid of cURLpp
+- [ ] Cache directory permissions
