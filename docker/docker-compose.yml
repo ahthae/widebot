@@ -4,3 +4,4 @@ services:
     build: ..
     volumes:
       - ../token.txt:/data/token.txt:ro
+      - ./cache:/data/cache

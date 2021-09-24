@@ -1,5 +1,5 @@
 FROM ubuntu:latest
-WORKDIR /data
+WORKDIR /tmp
 COPY . .
 RUN rm -rf build
 
@@ -16,8 +16,8 @@ RUN cat /etc/ssl/openssl.cnf >> openssl.cnf.tmp
 RUN cat openssl.cnf.2 >> openssl.cnf.tmp
 RUN mv openssl.cnf.tmp /etc/ssl/openssl.cnf
 
-WORKDIR build
-RUN cmake ..
+WORKDIR /data
+RUN cmake /tmp
 RUN cmake --build .
 
-CMD ["/data/build/WideBot"]
+CMD ["/data/WideBot"]
