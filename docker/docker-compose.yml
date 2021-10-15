@@ -2,6 +2,7 @@ version: "3.9"
 services:
   app:
     build: ..
+    restart: always
     volumes:
       - ../token.txt:/data/token.txt:ro
       - ./cache:/data/cache
